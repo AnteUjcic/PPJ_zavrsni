@@ -103,20 +103,11 @@ func main() {
 	goal := grid[3][9]
 
 	// Pokretanje A* pretrage
-	path := aStarSearch(grid, start, goal, true)
-
-	// Ispis rezultata
-	if path != nil {
-		printGrid(grid, start, goal, path, nil, nil)
-		fmt.Println("Path found!")
-	} else {
-		printGrid(grid, start, goal, nil, nil, nil)
-		fmt.Println("No path found.")
-	}
+	aStarSearch(grid, start, goal)
 }
 
 // Implementacija A* algoritma
-func aStarSearch(grid [][]*Node, start, goal *Node, visualize bool) []*Node {
+func aStarSearch(grid [][]*Node, start, goal *Node) {
 	openSet := &PriorityQueue{}
 	heap.Init(openSet)
 
@@ -126,6 +117,7 @@ func aStarSearch(grid [][]*Node, start, goal *Node, visualize bool) []*Node {
 	heap.Push(openSet, start)
 
 	closedSet := make(map[*Node]bool)
+	pathFound := false
 
 	for openSet.Len() > 0 {
 		current := heap.Pop(openSet).(*Node)
@@ -133,8 +125,8 @@ func aStarSearch(grid [][]*Node, start, goal *Node, visualize bool) []*Node {
 
 		// Ako je cilj dosegnut, rekonstruiraj put
 		if current == goal {
-			return reconstructPath(current)
-
+			pathFound = true
+			break
 		}
 
 		// Obrada susjednih čvorova
@@ -144,7 +136,7 @@ func aStarSearch(grid [][]*Node, start, goal *Node, visualize bool) []*Node {
 			}
 			propG := current.G + 1
 			// Ako susjed nije u openSetu ili je pronađen bolji put
-			if neighbor.Index == -1 && !inOpenSet(openSet, neighbor) {
+			if neighbor.Index == -1 && !inOpenSet(neighbor) {
 				neighbor.G = propG
 				neighbor.H = heuristic(neighbor, goal)
 				neighbor.F = neighbor.G + neighbor.H
@@ -154,13 +146,17 @@ func aStarSearch(grid [][]*Node, start, goal *Node, visualize bool) []*Node {
 				openSet.update(neighbor, propG, neighbor.H, current)
 			}
 		}
-		// Vizualizacija pretrage
-		if visualize {
-			printGrid(grid, start, goal, nil, openSet, closedSet)
-			time.Sleep(150 * time.Millisecond)
-		}
+
+		printGrid(grid, start, goal, nil, openSet, closedSet)
 	}
-	return nil
+
+	// Ispis rezultata
+	if pathFound {
+		pathLength := reconstructPath(grid, start, goal, openSet, closedSet)
+		fmt.Println("Duljina puta:", pathLength)
+	} else {
+		fmt.Println("Ne postoji put.")
+	}
 }
 
 // Dohvaća susjedne čvorove
@@ -169,6 +165,7 @@ func getNeighbors(grid [][]*Node, node *Node) []*Node {
 		{1, 0}, {-1, 0}, {0, 1}, {0, -1},
 	}
 	var neighbors []*Node
+
 	for _, d := range directions {
 		nx, ny := node.X+d[0], node.Y+d[1]
 		if ny >= 0 && ny < len(grid) && nx >= 0 && nx < len(grid[0]) {
@@ -179,22 +176,24 @@ func getNeighbors(grid [][]*Node, node *Node) []*Node {
 }
 
 // Provjerava je li čvor u openSetu
-func inOpenSet(openSet *PriorityQueue, node *Node) bool {
+func inOpenSet(node *Node) bool {
 	return node.Index != -1
 }
 
-func reconstructPath(node *Node) []*Node {
+func reconstructPath(grid [][]*Node, start, goal *Node, openSet *PriorityQueue, closedSet map[*Node]bool) int {
 	var path []*Node
-	for node != nil {
-		path = append(path, node)
-		node = node.Parent
-	}
-	// Obrnuti put
-	for i := 0; i < len(path)/2; i++ {
-		path[i], path[len(path)-1-i] = path[len(path)-1-i], path[i]
+	var current = goal
+	var counter = 0
 
+	// Rekonstruira putanju od cilja do početka
+	for current != nil {
+		path = append(path, current)
+		current = current.Parent
+		counter += 1
+
+		printGrid(grid, start, goal, path, openSet, closedSet)
 	}
-	return path
+	return counter - 2
 }
 
 // Ispis mreže
@@ -211,30 +210,31 @@ func printGrid(grid [][]*Node, start, goal *Node, path []*Node, openSet *Priorit
 			openSetMap[n] = true
 		}
 	}
+
 	Reset := "\033[0m"
 	Red := "\033[31m"
 	Green := "\033[32m"
+	Blue := "\033[0;34m"
 	Yellow := "\033[33m"
-	Magenta := "\033[35m"
-	White := "\033[97m"
 	fmt.Print("\033[H\033[2J")
+
 	for y := range grid {
 		for x := range grid[y] {
 			node := grid[y][x]
+
 			switch {
 			case node == start:
-				fmt.Print(White + "S " + Reset)
+				fmt.Print(Blue + "S " + Reset)
 			case node == goal:
-				fmt.Print(Green + "G " + Reset)
+				fmt.Print(Blue + "G " + Reset)
 			case pathMap[node]:
-
-				fmt.Print(Magenta + "* " + Reset) // Put
+				fmt.Print(Green + "0 " + Reset) // Put
 			case !node.Walkable:
-				fmt.Print(Red + "# " + Reset) // Prepreka
+				fmt.Print("# " + Reset) // Prepreka
 			case openSet != nil && openSetMap[node]:
-				fmt.Print("? ") // u setu
+				fmt.Print(Yellow + "* " + Reset) // u setu
 			case closedSet != nil && closedSet[node]:
-				fmt.Print(Yellow + "x " + Reset) // zatvoren/posjecen
+				fmt.Print(Red + "* " + Reset) // zatvoren/posjećen
 			default:
 				fmt.Print(". ")
 			}
@@ -242,4 +242,5 @@ func printGrid(grid [][]*Node, start, goal *Node, path []*Node, openSet *Priorit
 		fmt.Println()
 	}
 	fmt.Println()
+	time.Sleep(150 * time.Millisecond)
 }
