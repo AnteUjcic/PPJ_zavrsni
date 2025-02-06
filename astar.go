@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"container/heap" // Paket za implementaciju prioritetskog reda
 	"fmt"
 	"math"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -14,6 +18,7 @@ type Node struct {
 	Parent   *Node   // Pokazivač na roditeljski čvor za rekonstrukciju puta
 	Index    int     // Indeks čvora u prioritetskom redu
 	Walkable bool    // Označava je li čvor prohodan
+	Weight   int
 }
 
 // Prioritetski red (min heap) za čvorove
@@ -64,10 +69,63 @@ func (pq *PriorityQueue) update(node *Node, g, h float64, parent *Node) {
 func heuristic(a, b *Node) float64 {
 	return math.Abs(float64(a.X-b.X)) + math.Abs(float64(a.Y-b.Y))
 }
+func getSelectedMap() []position {
+	reader := bufio.NewReader(os.Stdin)
 
+	for {
+		fmt.Print("Odaberite mapu (1-3): ")
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+
+		mapNum, err := strconv.Atoi(input)
+		if err != nil || mapNum < 1 || mapNum > 3 {
+			fmt.Println("Unesite broj od 1 do 3")
+			continue
+		}
+
+		return obstacleMaps[mapNum-1]
+	}
+}
+func getWeightType() int {
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		fmt.Println("Select weight type:")
+		fmt.Println("1. All nodes weight 1")
+		fmt.Println("2. Weight = column number")
+		fmt.Println("3. Weight = row number")
+		fmt.Println("4. Weight = row + column")
+
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+
+		weightType, err := strconv.Atoi(input)
+		if err != nil || weightType < 1 || weightType > 4 {
+			fmt.Println("Please enter a number between 1 and 4")
+			continue
+		}
+		return weightType
+	}
+}
+
+func calculateWeight(x, y int, weightType int) int {
+	switch weightType {
+	case 1:
+		return 1
+	case 2:
+		return x + 1
+	case 3:
+		return y + 1
+	case 4:
+		return x + y + 2
+	default:
+		return 1
+	}
+}
 func main() {
 	// Definicija dimenzija mreže
 	width, height := 10, 10
+	weightType := getWeightType()
 
 	// Inicijalizacija mreže čvorova
 	grid := make([][]*Node, height)
@@ -79,19 +137,13 @@ func main() {
 				Y:        y,
 				Walkable: true,
 				Index:    -1,
+				Weight:   calculateWeight(x, y, weightType),
 			}
 		}
 	}
 
 	// Definicija prepreka na mreži
-	obstacles := []struct{ X, Y int }{
-		{1, 0}, {2, 0}, {3, 0},
-		{1, 1},
-		{8, 2}, {8, 3}, {8, 4},
-		{2, 4}, {2, 5}, {2, 6},
-		{5, 5}, {5, 6}, {5, 7}, {5, 8},
-		{6, 9},
-	}
+	obstacles := getSelectedMap()
 
 	// Označavanje prepreka kao neprohodnih čvorova
 	for _, obs := range obstacles {
@@ -134,7 +186,7 @@ func aStarSearch(grid [][]*Node, start, goal *Node) {
 			if !neighbor.Walkable || closedSet[neighbor] {
 				continue
 			}
-			propG := current.G + 1
+			propG := current.G + float64(current.Weight)
 			// Ako susjed nije u openSetu ili je pronađen bolji put
 			if neighbor.Index == -1 && !inOpenSet(neighbor) {
 				neighbor.G = propG
