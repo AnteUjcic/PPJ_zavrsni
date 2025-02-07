@@ -3,5 +3,5 @@
 run file using:
 
 ```bash
-go run astar.go maps.go
+go run astar.go maps.go queue.go
 ```

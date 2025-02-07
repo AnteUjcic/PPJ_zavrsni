@@ -6,6 +6,6 @@ mogućnost odabira načina inicijalizacije (zadana (default) konfiguracija ili r
 ODRAĐENO (unošenje početnog i krajnjeg čvora s validacijom)
 odabir i modifikacija brzine animacije
 
-odabir predefiniranih uzoraka matrice
-implementacija težina za svaku ćeliju
+ODRAĐENO odabir predefiniranih uzoraka matrice
+ODRAĐENO implementacija težina za svaku ćeliju
 odvajanje programa u više datoteka
