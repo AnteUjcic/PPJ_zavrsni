@@ -3,7 +3,7 @@ mogućnost odabira željene heuristike
 reformatiranje koda, korištenje učinkovitijih struktura
 
 mogućnost odabira načina inicijalizacije (zadana (default) konfiguracija ili ručni unos određenih vrijednosti)
-unošenje početnog i krajnjeg čvora s validacijom
+ODRAĐENO (unošenje početnog i krajnjeg čvora s validacijom)
 odabir i modifikacija brzine animacije
 
 odabir predefiniranih uzoraka matrice

@@ -69,11 +69,12 @@ func (pq *PriorityQueue) update(node *Node, g, h float64, parent *Node) {
 func heuristic(a, b *Node) float64 {
 	return math.Abs(float64(a.X-b.X)) + math.Abs(float64(a.Y-b.Y))
 }
+
 func getSelectedMap() []position {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
-		fmt.Print("Odaberite mapu (1-3): ")
+		fmt.Print("\nOdaberite mapu (1-3): ")
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
 
@@ -86,22 +87,24 @@ func getSelectedMap() []position {
 		return obstacleMaps[mapNum-1]
 	}
 }
+
 func getWeightType() int {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
-		fmt.Println("Select weight type:")
-		fmt.Println("1. All nodes weight 1")
-		fmt.Println("2. Weight = column number")
-		fmt.Println("3. Weight = row number")
-		fmt.Println("4. Weight = row + column")
+		fmt.Println("Odaberite tip težine svakog čvora:")
+		fmt.Println("1. Svi čvorovi imaju težinu 1")
+		fmt.Println("2. Težina = broj stupaca")
+		fmt.Println("3. Težina = broj redaka")
+		fmt.Println("4. Težina = retci + stupci")
+		fmt.Print("Vaš odabir: ")
 
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
 
 		weightType, err := strconv.Atoi(input)
 		if err != nil || weightType < 1 || weightType > 4 {
-			fmt.Println("Please enter a number between 1 and 4")
+			fmt.Print("Molimo unesite broj između 1 i 4\n\n")
 			continue
 		}
 		return weightType
@@ -122,40 +125,43 @@ func calculateWeight(x, y int, weightType int) int {
 		return 1
 	}
 }
-func main() {
-	// Definicija dimenzija mreže
-	width, height := 10, 10
-	weightType := getWeightType()
 
-	// Inicijalizacija mreže čvorova
-	grid := make([][]*Node, height)
-	for y := 0; y < height; y++ {
-		grid[y] = make([]*Node, width)
-		for x := 0; x < width; x++ {
-			grid[y][x] = &Node{
-				X:        x,
-				Y:        y,
-				Walkable: true,
-				Index:    -1,
-				Weight:   calculateWeight(x, y, weightType),
+func insertCoordinates(grid [][]*Node, height, width int, nodeType byte) *Node {
+	reader1 := bufio.NewReader(os.Stdin)
+	reader2 := bufio.NewReader(os.Stdin)
+
+	if nodeType == 'A' {
+		fmt.Println("\nUnesite koordinate početka")
+	} else {
+		fmt.Println("\nUnesite koordinate cilja")
+	}
+
+	for {
+		fmt.Print("X-koordinata: ")
+		inputX, _ := reader1.ReadString('\n')
+		inputX = strings.TrimSpace(inputX)
+		x, errX := strconv.Atoi(inputX)
+
+		fmt.Print("Y-koordinata: ")
+		inputY, _ := reader2.ReadString('\n')
+		inputY = strings.TrimSpace(inputY)
+		y, errY := strconv.Atoi(inputY)
+
+		if errX != nil || errY != nil {
+			fmt.Println("Molimo unesite brojeve")
+		} else if x < 0 || x >= height || y < 0 || y >= width {
+			fmt.Println("X-koordinate moraju biti u rasponu od 0 do", height-1)
+			fmt.Println("Y-koordinate moraju biti u rasponu od 0 do", width-1)
+		} else if !grid[y][x].Walkable {
+			fmt.Println("Navedene koordinate su zauzete!")
+		} else {
+			if nodeType == 'A' {
+				grid[y][x].Walkable = false
 			}
+			return grid[y][x]
 		}
+		println()
 	}
-
-	// Definicija prepreka na mreži
-	obstacles := getSelectedMap()
-
-	// Označavanje prepreka kao neprohodnih čvorova
-	for _, obs := range obstacles {
-		grid[obs.Y][obs.X].Walkable = false
-	}
-
-	// Početni i krajnji čvor
-	start := grid[0][0]
-	goal := grid[3][9]
-
-	// Pokretanje A* pretrage
-	aStarSearch(grid, start, goal)
 }
 
 // Implementacija A* algoritma
@@ -295,4 +301,39 @@ func printGrid(grid [][]*Node, start, goal *Node, path []*Node, openSet *Priorit
 	}
 	fmt.Println()
 	time.Sleep(150 * time.Millisecond)
+}
+
+func main() {
+	// Definicija dimenzija mreže
+	width, height := 10, 10
+	weightType := getWeightType()
+
+	// Inicijalizacija mreže čvorova
+	grid := make([][]*Node, height)
+	for y := 0; y < height; y++ {
+		grid[y] = make([]*Node, width)
+		for x := 0; x < width; x++ {
+			grid[y][x] = &Node{
+				X:        x,
+				Y:        y,
+				Walkable: true,
+				Index:    -1,
+				Weight:   calculateWeight(x, y, weightType),
+			}
+		}
+	}
+
+	// Definicija prepreka na mreži
+	obstacles := getSelectedMap()
+
+	// Označavanje prepreka kao neprohodnih čvorova
+	for _, obs := range obstacles {
+		grid[obs.Y][obs.X].Walkable = false
+	}
+
+	start := insertCoordinates(grid, height, width, 'A')
+	goal := insertCoordinates(grid, height, width, 'B')
+
+	// Pokretanje A* pretrage
+	aStarSearch(grid, start, goal)
 }
