@@ -26,7 +26,7 @@ func heuristic(a, b *Node) float64 {
 	return math.Abs(float64(a.X-b.X)) + math.Abs(float64(a.Y-b.Y))
 }
 
-// autor: Dino Gržinić
+// DODANO - autor: Dino Gržinić
 func getSelectedMap() []position {
 	reader := bufio.NewReader(os.Stdin)
 
@@ -45,7 +45,7 @@ func getSelectedMap() []position {
 	}
 }
 
-// autor: Dino Gržinić
+// DODANO - autor: Dino Gržinić
 func getWeightType() int {
 	reader := bufio.NewReader(os.Stdin)
 
@@ -69,7 +69,7 @@ func getWeightType() int {
 	}
 }
 
-// autor: Dino Gržinić
+// DODANO - autor: Dino Gržinić
 func calculateWeight(x, y int, weightType int) int {
 	switch weightType {
 	case 1:
@@ -85,6 +85,7 @@ func calculateWeight(x, y int, weightType int) int {
 	}
 }
 
+// DODANO - autor: Marin Rabađija
 func insertCoordinates(grid [][]*Node, height, width int, nodeType byte) *Node {
 	reader1 := bufio.NewReader(os.Stdin)
 	reader2 := bufio.NewReader(os.Stdin)
@@ -139,8 +140,9 @@ func aStarSearch(grid [][]*Node, start, goal *Node) {
 	for openSet.Len() > 0 {
 		current := heap.Pop(openSet).(*Node)
 		closedSet[current] = true
+		printGrid(grid, start, goal, nil, openSet, closedSet)
 
-		// Ako je cilj dosegnut, rekonstruiraj put
+		// IZMJENA - autor: Marin Rabađija
 		if current == goal {
 			pathFound = true
 			break
@@ -152,6 +154,7 @@ func aStarSearch(grid [][]*Node, start, goal *Node) {
 				continue
 			}
 			propG := current.G + float64(current.Weight)
+
 			// Ako susjed nije u openSetu ili je pronađen bolji put
 			if neighbor.Index == -1 && !inOpenSet(neighbor) {
 				neighbor.G = propG
@@ -159,15 +162,15 @@ func aStarSearch(grid [][]*Node, start, goal *Node) {
 				neighbor.F = neighbor.G + neighbor.H
 				neighbor.Parent = current
 				heap.Push(openSet, neighbor)
+
+				printGrid(grid, start, goal, nil, openSet, closedSet)
 			} else if propG < neighbor.G {
 				openSet.update(neighbor, propG, neighbor.H, current)
 			}
 		}
-
-		printGrid(grid, start, goal, nil, openSet, closedSet)
 	}
 
-	// Ispis rezultata
+	// IZMIJENJENO - autor: Marin Rabađija
 	if pathFound {
 		pathLength := reconstructPath(grid, start, goal, openSet, closedSet)
 		fmt.Println("Duljina puta:", pathLength)
@@ -208,6 +211,7 @@ func reconstructPath(grid [][]*Node, start, goal *Node, openSet *PriorityQueue, 
 		current = current.Parent
 		counter += 1
 
+		// IZMJENA - autor: Marin Rabađija
 		printGrid(grid, start, goal, path, openSet, closedSet)
 	}
 	return counter - 2
@@ -233,12 +237,14 @@ func printGrid(grid [][]*Node, start, goal *Node, path []*Node, openSet *Priorit
 	Green := "\033[32m"
 	Blue := "\033[0;34m"
 	Yellow := "\033[33m"
+	// ANSI escape code
 	fmt.Print("\033[H\033[2J")
 
 	for y := range grid {
 		for x := range grid[y] {
 			node := grid[y][x]
 
+			//IZMJENA -  autor novih znakova za ispis: Marin Rabađija
 			switch {
 			case node == start:
 				fmt.Print(Blue + "S " + Reset)
@@ -259,7 +265,7 @@ func printGrid(grid [][]*Node, start, goal *Node, path []*Node, openSet *Priorit
 		fmt.Println()
 	}
 	fmt.Println()
-	time.Sleep(150 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 }
 
 func main() {
@@ -290,6 +296,7 @@ func main() {
 		grid[obs.Y][obs.X].Walkable = false
 	}
 
+	//DODANO - autor: Marin Rabađija
 	start := insertCoordinates(grid, height, width, 'A')
 	goal := insertCoordinates(grid, height, width, 'B')
 
