@@ -5,7 +5,7 @@ reformatiranje koda, korištenje učinkovitijih struktura
 ODRAĐENO animacija rekonstruiranja puta
 mogućnost odabira načina inicijalizacije (zadana (default) konfiguracija ili ručni unos određenih vrijednosti)
 ODRAĐENO unošenje početnog i krajnjeg čvora s validacijom
-odabir i modifikacija brzine animacije
+ODRAĐENO odabir i modifikacija brzine animacije
 
 ODRAĐENO odabir predefiniranih uzoraka matrice
 ODRAĐENO implementacija težina za svaku ćeliju
