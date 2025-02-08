@@ -1,6 +1,6 @@
 package main
 
-// autor: Dino Gržinić
+// PREBAČENO - autor: Dino Gržinić
 
 import "container/heap"
 

@@ -162,8 +162,6 @@ func aStarSearch(grid [][]*Node, start, goal *Node) {
 				neighbor.F = neighbor.G + neighbor.H
 				neighbor.Parent = current
 				heap.Push(openSet, neighbor)
-
-				printGrid(grid, start, goal, nil, openSet, closedSet)
 			} else if propG < neighbor.G {
 				openSet.update(neighbor, propG, neighbor.H, current)
 			}
@@ -265,7 +263,7 @@ func printGrid(grid [][]*Node, start, goal *Node, path []*Node, openSet *Priorit
 		fmt.Println()
 	}
 	fmt.Println()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(150 * time.Millisecond)
 }
 
 func main() {

@@ -1,6 +1,6 @@
 package main
 
-// autor: Dino Gržinić
+// DODANO - autor: Dino Gržinić
 type position struct {
 	X int
 	Y int
