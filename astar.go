@@ -91,9 +91,9 @@ func insertCoordinates(grid [][]*Node, height, width int, nodeType byte) *Node {
 	reader2 := bufio.NewReader(os.Stdin)
 
 	if nodeType == 'A' {
-		fmt.Println("\nUnesite koordinate početka")
+		fmt.Println("\nUnesite koordinate POČETKA")
 	} else {
-		fmt.Println("\nUnesite koordinate cilja")
+		fmt.Println("\nUnesite koordinate CILJA")
 	}
 
 	for {
@@ -124,8 +124,42 @@ func insertCoordinates(grid [][]*Node, height, width int, nodeType byte) *Node {
 	}
 }
 
+// DODANO - autor: Marin Rabađija
+func insertAnimationSpeed() int {
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		fmt.Println("\nOdaberite brzinu animacije:")
+		fmt.Println("1. Sporo")
+		fmt.Println("2. Srednje")
+		fmt.Println("3. Brzo")
+		fmt.Print("Vaš odabir: ")
+
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+
+		choice, err := strconv.Atoi(input)
+		if err != nil || choice < 1 || choice > 3 {
+			fmt.Print("Molimo unesite broj između 1 i 3\n\n")
+		} else {
+			animationSpeed := 0
+
+			switch {
+			case choice == 1:
+				animationSpeed = 280
+			case choice == 2:
+				animationSpeed = 180
+			case choice == 3:
+				animationSpeed = 100
+			}
+
+			return animationSpeed
+		}
+	}
+}
+
 // Implementacija A* algoritma
-func aStarSearch(grid [][]*Node, start, goal *Node) {
+func aStarSearch(grid [][]*Node, start, goal *Node, animationSpeed int) {
 	openSet := &PriorityQueue{}
 	heap.Init(openSet)
 
@@ -140,7 +174,7 @@ func aStarSearch(grid [][]*Node, start, goal *Node) {
 	for openSet.Len() > 0 {
 		current := heap.Pop(openSet).(*Node)
 		closedSet[current] = true
-		printGrid(grid, start, goal, nil, openSet, closedSet)
+		printGrid(grid, start, goal, nil, openSet, closedSet, animationSpeed)
 
 		// IZMJENA - autor: Marin Rabađija
 		if current == goal {
@@ -168,9 +202,9 @@ func aStarSearch(grid [][]*Node, start, goal *Node) {
 		}
 	}
 
-	// IZMIJENJENO - autor: Marin Rabađija
+	// DODANO - autor: Marin Rabađija
 	if pathFound {
-		pathLength := reconstructPath(grid, start, goal, openSet, closedSet)
+		pathLength := reconstructPath(grid, start, goal, openSet, closedSet, animationSpeed)
 		fmt.Println("Duljina puta:", pathLength)
 	} else {
 		fmt.Println("Ne postoji put.")
@@ -198,7 +232,8 @@ func inOpenSet(node *Node) bool {
 	return node.Index != -1
 }
 
-func reconstructPath(grid [][]*Node, start, goal *Node, openSet *PriorityQueue, closedSet map[*Node]bool) int {
+func reconstructPath(grid [][]*Node, start, goal *Node, openSet *PriorityQueue,
+	closedSet map[*Node]bool, animationSpeed int) int {
 	var path []*Node
 	var current = goal
 	var counter = 0
@@ -210,13 +245,14 @@ func reconstructPath(grid [][]*Node, start, goal *Node, openSet *PriorityQueue, 
 		counter += 1
 
 		// IZMJENA - autor: Marin Rabađija
-		printGrid(grid, start, goal, path, openSet, closedSet)
+		printGrid(grid, start, goal, path, openSet, closedSet, animationSpeed)
 	}
 	return counter - 2
 }
 
 // Ispis mreže
-func printGrid(grid [][]*Node, start, goal *Node, path []*Node, openSet *PriorityQueue, closedSet map[*Node]bool) {
+func printGrid(grid [][]*Node, start, goal *Node, path []*Node,
+	openSet *PriorityQueue, closedSet map[*Node]bool, animationSpeed int) {
 	// Ispis vizualizacije
 	pathMap := make(map[*Node]bool)
 	for _, p := range path {
@@ -245,9 +281,9 @@ func printGrid(grid [][]*Node, start, goal *Node, path []*Node, openSet *Priorit
 			//IZMJENA -  autor novih znakova za ispis: Marin Rabađija
 			switch {
 			case node == start:
-				fmt.Print(Blue + "S " + Reset)
+				fmt.Print(Blue + "A " + Reset)
 			case node == goal:
-				fmt.Print(Blue + "G " + Reset)
+				fmt.Print(Blue + "B " + Reset)
 			case pathMap[node]:
 				fmt.Print(Green + "0 " + Reset) // Put
 			case !node.Walkable:
@@ -263,7 +299,8 @@ func printGrid(grid [][]*Node, start, goal *Node, path []*Node, openSet *Priorit
 		fmt.Println()
 	}
 	fmt.Println()
-	time.Sleep(150 * time.Millisecond)
+	// IZMJENA - autor: Marin Rabađija
+	time.Sleep(time.Duration(animationSpeed) * time.Millisecond)
 }
 
 func main() {
@@ -294,10 +331,11 @@ func main() {
 		grid[obs.Y][obs.X].Walkable = false
 	}
 
-	//DODANO - autor: Marin Rabađija
+	// DODANO - autor: Marin Rabađija
 	start := insertCoordinates(grid, height, width, 'A')
 	goal := insertCoordinates(grid, height, width, 'B')
+	animationSpeed := insertAnimationSpeed()
 
 	// Pokretanje A* pretrage
-	aStarSearch(grid, start, goal)
+	aStarSearch(grid, start, goal, animationSpeed)
 }
