@@ -34,8 +34,10 @@ func chooseInitializationMethod() string {
 		fmt.Println("1. Default opcija (učitavanje koordinata iz input.txt datoteke)")
 		fmt.Println("2. Ručni unos koordinata")
 		fmt.Print("Vaš odabir: ")
+
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
+
 		if input == "1" || input == "2" {
 			return input
 		}
@@ -142,7 +144,7 @@ func getWeightType() int {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
-		fmt.Println("Odaberite tip težine svakog čvora:")
+		fmt.Println("\nOdaberite tip težine svakog čvora:")
 		fmt.Println("1. Svi čvorovi imaju težinu 1")
 		fmt.Println("2. Težina = broj stupaca")
 		fmt.Println("3. Težina = broj redaka")
@@ -160,6 +162,8 @@ func getWeightType() int {
 		return weightType
 	}
 }
+
+// DODANO - autor: Ante Ujčić
 func getInputFromFile() (int, int, int, int, int, int, int, int) {
 	file, err := os.Open("input.txt")
 	if err != nil {
@@ -244,17 +248,20 @@ func getInputFromFile() (int, int, int, int, int, int, int, int) {
 
 	return weightType, mapSelection, startX, startY, goalX, goalY, animationSpeed, heurChoice
 }
-func selectHeuristicFromValue(choice int) HeuristicFunc {
+
+// DODANO - autor: Ante Ujčić
+// IZMJENA - autor: Marin Rabađija (dodan indikator za implementaciju dijagonala)
+func selectHeuristicFromValue(choice int) (HeuristicFunc, bool) {
 	switch choice {
 	case 1:
-		return manhattan
+		return manhattan, false
 	case 2:
-		return euclidean
+		return euclidean, true
 	case 3:
-		return diagonal
+		return diagonal, true
 	default:
 		// Ako se dogodi neispravan unos, default je Manhattan.
-		return manhattan
+		return manhattan, false
 	}
 }
 
@@ -283,10 +290,11 @@ func diagonal(a, b *Node) float64 {
 }
 
 // DODAO Autor - Ante Ujčić
-func getSelectedHeuristic() HeuristicFunc {
+// IZMJENA - autor: Marin Rabađija (dodan indikator za implementaciju dijagonala)
+func getSelectedHeuristic() (HeuristicFunc, bool) {
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Println("Odaberite heuristiku:")
+		fmt.Println("\nOdaberite heuristiku:")
 		fmt.Println("1. Manhattan udaljenost")
 		fmt.Println("2. Euklidska udaljenost")
 		fmt.Println("3. Dijagonalna udaljenost")
@@ -301,11 +309,11 @@ func getSelectedHeuristic() HeuristicFunc {
 		}
 		switch choice {
 		case 1:
-			return manhattan
+			return manhattan, false
 		case 2:
-			return euclidean
+			return euclidean, true
 		case 3:
-			return diagonal
+			return diagonal, true
 		}
 	}
 }
@@ -401,7 +409,8 @@ func insertAnimationSpeed() int {
 
 // IZMJENIO Autor - Ante Ujčić
 // Implementacija A* algoritma
-func aStarSearch(grid [][]*Node, start, goal *Node, animationSpeed int, heuristicFunc HeuristicFunc) {
+func aStarSearch(grid [][]*Node, start, goal *Node, animationSpeed int,
+	heuristicFunc HeuristicFunc, diagonals bool) {
 	openSet := &PriorityQueue{}
 	heap.Init(openSet)
 
@@ -425,7 +434,7 @@ func aStarSearch(grid [][]*Node, start, goal *Node, animationSpeed int, heuristi
 		}
 
 		// Obrada susjednih čvorova
-		for _, neighbor := range getNeighbors(grid, current) {
+		for _, neighbor := range getNeighbors(grid, current, diagonals) {
 			if !neighbor.Walkable || closedSet[neighbor] {
 				continue
 			}
@@ -454,9 +463,19 @@ func aStarSearch(grid [][]*Node, start, goal *Node, animationSpeed int, heuristi
 }
 
 // Dohvaća susjedne čvorove
-func getNeighbors(grid [][]*Node, node *Node) []*Node {
-	directions := [][2]int{
-		{1, 0}, {-1, 0}, {0, 1}, {0, -1},
+func getNeighbors(grid [][]*Node, node *Node, diagonals bool) []*Node {
+	var directions [][2]int
+
+	// IZMJENA - autor: Marin Rabađija
+	// ako se koriste dijagonalna ili euklidska udaljenost
+	if diagonals {
+		directions = [][2]int{
+			{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, -1}, {-1, 1}, {-1, -1}, {1, 1},
+		}
+	} else {
+		directions = [][2]int{
+			{1, 0}, {-1, 0}, {0, 1}, {0, -1},
+		}
 	}
 	var neighbors []*Node
 
@@ -615,14 +634,17 @@ func main() {
 				}
 			}
 		}
+
 		// Unos prepreka (ručni odabir mape)
 		obstacles = getSelectedMap()
 		for _, obs := range obstacles {
 			grid[obs.Y][obs.X].Walkable = false
 		}
+
 		// Ručni unos početnih i završnih koordinata
 		start = insertCoordinates(grid, height, width, 'A')
 		goal = insertCoordinates(grid, height, width, 'B')
+
 		// Ručni unos animacijske brzine
 		animSpeed = insertAnimationSpeed()
 		// U ručnom načinu možemo kasnije ručno odabrati heurističku funkciju:
@@ -631,14 +653,16 @@ func main() {
 
 	// Postavljanje animacijske brzine – sada samo koristimo vrijednost iz varijable animSpeed
 	animationSpeed := animSpeed
+	diagonals := false
 
 	// Odabir heuristike
+	// IZMJENA - autor: Marin Rabađija (dodan indikator za implementaciju dijagonala)
 	var heuristicFunc HeuristicFunc
 	if initMethod == "1" {
-		heuristicFunc = selectHeuristicFromValue(heur)
+		heuristicFunc, diagonals = selectHeuristicFromValue(heur)
 	} else {
-		heuristicFunc = getSelectedHeuristic()
+		heuristicFunc, diagonals = getSelectedHeuristic()
 	}
 
-	aStarSearch(grid, start, goal, animationSpeed, heuristicFunc)
+	aStarSearch(grid, start, goal, animationSpeed, heuristicFunc, diagonals)
 }
