@@ -1,13 +1,14 @@
 package main
 
 // DODANO - autor: Dino Gržinić
+
 type position struct {
 	X int
 	Y int
 }
 
 var obstacleMaps = [][]position{
-	// Map 1 - Simple vertical line in middle
+	// Mapa 1 - Jednostavna linija u sredini
 	{
 		position{4, 3},
 		position{4, 4},
@@ -15,7 +16,7 @@ var obstacleMaps = [][]position{
 		position{4, 6},
 	},
 
-	// Map 2 - Two L-shaped barriers
+	// Mapa 2 - Dva L zida
 	{
 		position{2, 2},
 		position{2, 3},
@@ -29,7 +30,7 @@ var obstacleMaps = [][]position{
 		position{8, 6},
 	},
 
-	// Map 3 - Complex maze pattern
+	// Mapa 3 - Uzorak labirinta
 	{
 		position{1, 1},
 		position{2, 1},

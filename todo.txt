@@ -9,4 +9,4 @@ ODRAĐENO odabir i modifikacija brzine animacije
 
 ODRAĐENO odabir predefiniranih uzoraka matrice
 ODRAĐENO implementacija težina za svaku ćeliju
-odvajanje programa u više datoteka
+ODRAĐENO odvajanje programa u više datoteka
