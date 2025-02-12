@@ -11,6 +11,10 @@ import (
 	"time"
 )
 
+// DODAO Autor - Ante Ujčić
+// HeuristicFunc predstavlja funkciju koja računa heuristiku između dva čvora.
+type HeuristicFunc func(a, b *Node) float64
+
 // Struktura čvora za A* algoritam
 type Node struct {
 	X, Y     int     // Koordinate čvora
@@ -21,9 +25,97 @@ type Node struct {
 	Weight   int
 }
 
-// Heuristička funkcija (Manhattan udaljenost)
-func heuristic(a, b *Node) float64 {
-	return math.Abs(float64(a.X-b.X)) + math.Abs(float64(a.Y-b.Y))
+// DODANO - autor: Ante Ujčić
+// Funkcija za odabir metode inicijalizacije (default ili ručni unos)
+func chooseInitializationMethod() string {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Println("\nOdaberite način inicijalizacije:")
+		fmt.Println("1. Default opcija (učitavanje koordinata iz input.txt datoteke)")
+		fmt.Println("2. Ručni unos koordinata")
+		fmt.Print("Vaš odabir: ")
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+		if input == "1" || input == "2" {
+			return input
+		}
+		fmt.Println("Molimo unesite 1 ili 2.")
+	}
+}
+
+// DODANO - autor: Ante Ujčić
+// Funkcija čita početne i završne koordinate iz datoteke input.txt
+func getCoordinatesFromFile(grid [][]*Node, height, width int) (*Node, *Node) {
+	file, err := os.Open("input.txt")
+	if err != nil {
+		fmt.Println("Greška prilikom otvaranja datoteke input.txt:", err)
+		os.Exit(1)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	// Učitavanje koordinata početka
+	if !scanner.Scan() {
+		fmt.Println("Nije moguće pročitati početne koordinate iz datoteke.")
+		os.Exit(1)
+	}
+	line1 := scanner.Text()
+	parts := strings.Fields(line1)
+	if len(parts) < 2 {
+		fmt.Println("Neispravan format početnih koordinata u datoteci.")
+		os.Exit(1)
+	}
+	startX, err1 := strconv.Atoi(parts[0])
+	startY, err2 := strconv.Atoi(parts[1])
+	if err1 != nil || err2 != nil {
+		fmt.Println("Neispravni brojevi za početne koordinate.")
+		os.Exit(1)
+	}
+	// Provjera granica: (X mora biti manji od širine, Y manji od visine)
+	if startX < 0 || startX >= width || startY < 0 || startY >= height {
+		fmt.Println("Početne koordinate iz datoteke su izvan dozvoljenih granica.")
+		os.Exit(1)
+	}
+
+	// Učitavanje koordinata cilja
+	if !scanner.Scan() {
+		fmt.Println("Nije moguće pročitati završne koordinate iz datoteke.")
+		os.Exit(1)
+	}
+	line2 := scanner.Text()
+	parts = strings.Fields(line2)
+	if len(parts) < 2 {
+		fmt.Println("Neispravan format završnih koordinata u datoteci.")
+		os.Exit(1)
+	}
+	goalX, err1 := strconv.Atoi(parts[0])
+	goalY, err2 := strconv.Atoi(parts[1])
+	if err1 != nil || err2 != nil {
+		fmt.Println("Neispravni brojevi za završne koordinate.")
+		os.Exit(1)
+	}
+	if goalX < 0 || goalX >= width || goalY < 0 || goalY >= height {
+		fmt.Println("Završne koordinate iz datoteke su izvan dozvoljenih granica.")
+		os.Exit(1)
+	}
+
+	// Provjera da su čvorovi prohodni
+	if !grid[startY][startX].Walkable {
+		fmt.Println("Početna pozicija iz datoteke nije prohodna.")
+		os.Exit(1)
+	}
+	if !grid[goalY][goalX].Walkable {
+		fmt.Println("Završna pozicija iz datoteke nije prohodna.")
+		os.Exit(1)
+	}
+
+	// Označavanje početka kao posebnog (ako to trebaš, npr. za neprohodnost)
+	grid[startY][startX].Walkable = false
+
+	start := grid[startY][startX]
+	goal := grid[goalY][goalX]
+	return start, goal
 }
 
 // DODANO - autor: Dino Gržinić
@@ -66,6 +158,155 @@ func getWeightType() int {
 			continue
 		}
 		return weightType
+	}
+}
+func getInputFromFile() (int, int, int, int, int, int, int, int) {
+	file, err := os.Open("input.txt")
+	if err != nil {
+		fmt.Println("Greška prilikom otvaranja datoteke input.txt:", err)
+		os.Exit(1)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var lines []string
+	for scanner.Scan() {
+		lines = append(lines, strings.TrimSpace(scanner.Text()))
+	}
+	if len(lines) < 6 {
+		fmt.Println("Datoteka input.txt mora sadržavati najmanje 6 redaka!")
+		os.Exit(1)
+	}
+
+	// 1. redak: tip težine čvora
+	weightType, err := strconv.Atoi(lines[0])
+	if err != nil || weightType < 1 || weightType > 4 {
+		fmt.Println("Neispravna vrijednost za težinu čvora (mora biti 1-4).")
+		os.Exit(1)
+	}
+
+	// 2. redak: odabir mape
+	mapSelection, err := strconv.Atoi(lines[1])
+	if err != nil || mapSelection < 1 || mapSelection > 3 {
+		fmt.Println("Neispravna vrijednost za odabir mape (mora biti 1-3).")
+		os.Exit(1)
+	}
+
+	// 3. redak: koordinate početka
+	parts := strings.Fields(lines[2])
+	if len(parts) < 2 {
+		fmt.Println("Neispravan format početnih koordinata.")
+		os.Exit(1)
+	}
+	startX, err1 := strconv.Atoi(parts[0])
+	startY, err2 := strconv.Atoi(parts[1])
+	if err1 != nil || err2 != nil {
+		fmt.Println("Neispravne početne koordinate.")
+		os.Exit(1)
+	}
+
+	// 4. redak: koordinate cilja
+	parts = strings.Fields(lines[3])
+	if len(parts) < 2 {
+		fmt.Println("Neispravan format koordinata cilja.")
+		os.Exit(1)
+	}
+	goalX, err1 := strconv.Atoi(parts[0])
+	goalY, err2 := strconv.Atoi(parts[1])
+	if err1 != nil || err2 != nil {
+		fmt.Println("Neispravne koordinate cilja.")
+		os.Exit(1)
+	}
+
+	// 5. redak: odabir brzine animacije
+	animChoice, err := strconv.Atoi(lines[4])
+	if err != nil || animChoice < 1 || animChoice > 3 {
+		fmt.Println("Neispravan unos za brzinu animacije (mora biti 1-3).")
+		os.Exit(1)
+	}
+	// Prema interaktivnom izboru: 1=Sporo (280 ms), 2=Srednje (180 ms), 3=Brzo (100 ms)
+	var animationSpeed int
+	switch animChoice {
+	case 1:
+		animationSpeed = 280
+	case 2:
+		animationSpeed = 180
+	case 3:
+		animationSpeed = 100
+	}
+
+	// 6. redak: odabir heurističke funkcije
+	heurChoice, err := strconv.Atoi(lines[5])
+	if err != nil || heurChoice < 1 || heurChoice > 3 {
+		fmt.Println("Neispravan unos za heurističku funkciju (mora biti 1-3).")
+		os.Exit(1)
+	}
+
+	return weightType, mapSelection, startX, startY, goalX, goalY, animationSpeed, heurChoice
+}
+func selectHeuristicFromValue(choice int) HeuristicFunc {
+	switch choice {
+	case 1:
+		return manhattan
+	case 2:
+		return euclidean
+	case 3:
+		return diagonal
+	default:
+		// Ako se dogodi neispravan unos, default je Manhattan.
+		return manhattan
+	}
+}
+
+// DODAO Autor - Ante Ujčić
+// Manhattan heuristika: zbraja apsolutne razlike koordinata
+func manhattan(a, b *Node) float64 {
+	return math.Abs(float64(a.X-b.X)) + math.Abs(float64(a.Y-b.Y))
+}
+
+// DODAO Autor - Ante Ujčić
+// Euklidska heuristika: izračunava pravokutnu udaljenost
+func euclidean(a, b *Node) float64 {
+	dx := float64(a.X - b.X)
+	dy := float64(a.Y - b.Y)
+	return math.Sqrt(dx*dx + dy*dy)
+}
+
+// DODAO Autor - Ante Ujčić
+// Dijagonalna heuristika: koristi kombinaciju ravnih i dijagonalnih pokreta
+func diagonal(a, b *Node) float64 {
+	dx := math.Abs(float64(a.X - b.X))
+	dy := math.Abs(float64(a.Y - b.Y))
+	D := 1.0
+	D2 := math.Sqrt2
+	return D*(dx+dy) + (D2-2*D)*math.Min(dx, dy)
+}
+
+// DODAO Autor - Ante Ujčić
+func getSelectedHeuristic() HeuristicFunc {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Println("Odaberite heuristiku:")
+		fmt.Println("1. Manhattan udaljenost")
+		fmt.Println("2. Euklidska udaljenost")
+		fmt.Println("3. Dijagonalna udaljenost")
+		fmt.Print("Vaš odabir: ")
+
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+		choice, err := strconv.Atoi(input)
+		if err != nil || choice < 1 || choice > 3 {
+			fmt.Println("Molimo unesite broj između 1 i 3")
+			continue
+		}
+		switch choice {
+		case 1:
+			return manhattan
+		case 2:
+			return euclidean
+		case 3:
+			return diagonal
+		}
 	}
 }
 
@@ -158,13 +399,14 @@ func insertAnimationSpeed() int {
 	}
 }
 
+// IZMJENIO Autor - Ante Ujčić
 // Implementacija A* algoritma
-func aStarSearch(grid [][]*Node, start, goal *Node, animationSpeed int) {
+func aStarSearch(grid [][]*Node, start, goal *Node, animationSpeed int, heuristicFunc HeuristicFunc) {
 	openSet := &PriorityQueue{}
 	heap.Init(openSet)
 
 	start.G = 0
-	start.H = heuristic(start, goal)
+	start.H = heuristicFunc(start, goal)
 	start.F = start.G + start.H
 	heap.Push(openSet, start)
 
@@ -192,7 +434,7 @@ func aStarSearch(grid [][]*Node, start, goal *Node, animationSpeed int) {
 			// Ako susjed nije u openSetu ili je pronađen bolji put
 			if neighbor.Index == -1 && !inOpenSet(neighbor) {
 				neighbor.G = propG
-				neighbor.H = heuristic(neighbor, goal)
+				neighbor.H = heuristicFunc(neighbor, goal)
 				neighbor.F = neighbor.G + neighbor.H
 				neighbor.Parent = current
 				heap.Push(openSet, neighbor)
@@ -304,38 +546,99 @@ func printGrid(grid [][]*Node, start, goal *Node, path []*Node,
 }
 
 func main() {
-	// Definicija dimenzija mreže
-	width, height := 10, 10
-	weightType := getWeightType()
+	const width, height = 10, 10
+	var weightType, mapSelection, startX, startY, goalX, goalY, animSpeed, heur int
+	var grid [][]*Node
+	var obstacles []position
+	var start, goal *Node
 
-	// Inicijalizacija mreže čvorova
-	grid := make([][]*Node, height)
-	for y := 0; y < height; y++ {
-		grid[y] = make([]*Node, width)
-		for x := 0; x < width; x++ {
-			grid[y][x] = &Node{
-				X:        x,
-				Y:        y,
-				Walkable: true,
-				Index:    -1,
-				Weight:   calculateWeight(x, y, weightType),
+	// Odabir načina inicijalizacije
+	initMethod := chooseInitializationMethod()
+
+	if initMethod == "1" {
+		// Default način: učitavanje svih podataka iz input.txt
+		weightType, mapSelection, startX, startY, goalX, goalY, animSpeed, heur = getInputFromFile()
+		// Inicijalizacija mreže
+		grid = make([][]*Node, height)
+		for y := 0; y < height; y++ {
+			grid[y] = make([]*Node, width)
+			for x := 0; x < width; x++ {
+				grid[y][x] = &Node{
+					X:        x,
+					Y:        y,
+					Walkable: true,
+					Index:    -1,
+					Weight:   calculateWeight(x, y, weightType),
+				}
 			}
 		}
+		// Postavljanje prepreka prema odabiru mape
+		obstacles = obstacleMaps[mapSelection-1]
+		for _, obs := range obstacles {
+			grid[obs.Y][obs.X].Walkable = false
+		}
+		// Provjera granica i prohodnosti učitanih koordinata
+		if startX < 0 || startX >= width || startY < 0 || startY >= height {
+			fmt.Println("Početne koordinate iz datoteke su izvan raspona.")
+			os.Exit(1)
+		}
+		if goalX < 0 || goalX >= width || goalY < 0 || goalY >= height {
+			fmt.Println("Koordinate cilja iz datoteke su izvan raspona.")
+			os.Exit(1)
+		}
+		if !grid[startY][startX].Walkable {
+			fmt.Println("Početna pozicija iz datoteke nije prohodna.")
+			os.Exit(1)
+		}
+		if !grid[goalY][goalX].Walkable {
+			fmt.Println("Pozicija cilja iz datoteke nije prohodna.")
+			os.Exit(1)
+		}
+		// Označavanje početka i dodjela
+		grid[startY][startX].Walkable = false
+		start = grid[startY][startX]
+		goal = grid[goalY][goalX]
+	} else {
+		// Ručni unos: interaktivno se postavljaju podaci
+		weightType = getWeightType()
+		// Inicijalizacija mreže
+		grid = make([][]*Node, height)
+		for y := 0; y < height; y++ {
+			grid[y] = make([]*Node, width)
+			for x := 0; x < width; x++ {
+				grid[y][x] = &Node{
+					X:        x,
+					Y:        y,
+					Walkable: true,
+					Index:    -1,
+					Weight:   calculateWeight(x, y, weightType),
+				}
+			}
+		}
+		// Unos prepreka (ručni odabir mape)
+		obstacles = getSelectedMap()
+		for _, obs := range obstacles {
+			grid[obs.Y][obs.X].Walkable = false
+		}
+		// Ručni unos početnih i završnih koordinata
+		start = insertCoordinates(grid, height, width, 'A')
+		goal = insertCoordinates(grid, height, width, 'B')
+		// Ručni unos animacijske brzine
+		animSpeed = insertAnimationSpeed()
+		// U ručnom načinu možemo kasnije ručno odabrati heurističku funkciju:
+		heur = 0
 	}
 
-	// Definicija prepreka na mreži
-	obstacles := getSelectedMap()
+	// Postavljanje animacijske brzine – sada samo koristimo vrijednost iz varijable animSpeed
+	animationSpeed := animSpeed
 
-	// Označavanje prepreka kao neprohodnih čvorova
-	for _, obs := range obstacles {
-		grid[obs.Y][obs.X].Walkable = false
+	// Odabir heuristike
+	var heuristicFunc HeuristicFunc
+	if initMethod == "1" {
+		heuristicFunc = selectHeuristicFromValue(heur)
+	} else {
+		heuristicFunc = getSelectedHeuristic()
 	}
 
-	// DODANO - autor: Marin Rabađija
-	start := insertCoordinates(grid, height, width, 'A')
-	goal := insertCoordinates(grid, height, width, 'B')
-	animationSpeed := insertAnimationSpeed()
-
-	// Pokretanje A* pretrage
-	aStarSearch(grid, start, goal, animationSpeed)
+	aStarSearch(grid, start, goal, animationSpeed, heuristicFunc)
 }
