@@ -17,7 +17,7 @@ func chooseInitializationMethod() string {
 	for {
 		fmt.Println("\nOdaberite način inicijalizacije:")
 		fmt.Println("1. Default opcija (učitavanje koordinata iz input.txt datoteke)")
-		fmt.Println("2. Ručni unos koordinata")
+		fmt.Println("2. Ručni unos vrijednosti")
 		fmt.Print("Vaš odabir: ")
 
 		input, _ := reader.ReadString('\n')

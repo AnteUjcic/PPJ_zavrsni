@@ -124,6 +124,8 @@ func main() {
 	var grid [][]*Node
 	var obstacles []position
 	var start, goal *Node
+	var heuristicFunc HeuristicFunc
+	var diagonals bool
 
 	// Odabir načina inicijalizacije
 	initMethod := chooseInitializationMethod()
@@ -167,10 +169,12 @@ func main() {
 			fmt.Println("Pozicija cilja iz datoteke nije prohodna.")
 			os.Exit(1)
 		}
+
 		// Označavanje početka i dodjela
 		grid[startY][startX].Walkable = false
 		start = grid[startY][startX]
 		goal = grid[goalY][goalX]
+		heuristicFunc, diagonals = selectHeuristicFromValue(heur)
 	} else {
 		// IZMJENA - autor: Dino Gržinić
 		// Ručni unos: interaktivno se postavljaju podaci
@@ -204,21 +208,10 @@ func main() {
 		// Ručni unos animacijske brzine
 		animSpeed = insertAnimationSpeed()
 		// U ručnom načinu možemo kasnije ručno odabrati heurističku funkciju:
+
 		heur = 0
-	}
-
-	// Postavljanje animacijske brzine – sada samo koristimo vrijednost iz varijable animSpeed
-	animationSpeed := animSpeed
-	diagonals := false
-
-	// Odabir heuristike
-	// IZMJENA - autor: Marin Rabađija (dodan indikator za implementaciju dijagonala)
-	var heuristicFunc HeuristicFunc
-	if initMethod == "1" {
-		heuristicFunc, diagonals = selectHeuristicFromValue(heur)
-	} else {
 		heuristicFunc, diagonals = getSelectedHeuristic()
 	}
 
-	aStarSearch(grid, start, goal, animationSpeed, heuristicFunc, diagonals)
+	aStarSearch(grid, start, goal, animSpeed, heuristicFunc, diagonals)
 }
