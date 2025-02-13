@@ -1,9 +1,9 @@
-kretanje po dijagonalama
 OBRAĐENO mogućnost odabira željene heuristike
 reformatiranje koda, korištenje učinkovitijih struktura
-
-ODRAĐENO animacija rekonstruiranja puta
 ODRAĐENO mogućnost odabira načina inicijalizacije (zadana (default) konfiguracija ili ručni unos određenih vrijednosti)
+
+ODRAĐENO kretanje po dijagonalama
+ODRAĐENO animacija rekonstruiranja puta
 ODRAĐENO unošenje početnog i krajnjeg čvora s validacijom
 ODRAĐENO odabir i modifikacija brzine animacije
 
