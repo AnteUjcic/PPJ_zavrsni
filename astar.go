@@ -3,7 +3,6 @@ package main
 import (
 	"container/heap" // Paket za implementaciju prioritetskog reda
 	"fmt"
-	"os"
 )
 
 // Struktura čvora za A* algoritam
@@ -32,7 +31,7 @@ func calculateWeight(x, y int, weightType int) int {
 	}
 }
 
-// IZMJENIO Autor - Ante Ujčić
+// IZMJENA Autor - Ante Ujčić
 // Implementacija A* algoritma
 func aStarSearch(grid [][]*Node, start, goal *Node, animationSpeed int,
 	heuristicFunc HeuristicFunc, diagonals bool) {
@@ -137,35 +136,14 @@ func initializeGrid(width, height, weightType int) [][]*Node {
 	return grid
 }
 
-// DODAO autor: Ante Ujčić
-// Funkcija za provjeru i postavljanje početnih i ciljanih pozicija
-func validateAndSetPositions(grid [][]*Node, startX, startY, goalX, goalY, width, height int) (*Node, *Node) {
-	if startX < 0 || startX >= width || startY < 0 || startY >= height {
-		fmt.Println("Početne koordinate su izvan raspona.")
-		os.Exit(1)
-	}
-	if goalX < 0 || goalX >= width || goalY < 0 || goalY >= height {
-		fmt.Println("Koordinate cilja su izvan raspona.")
-		os.Exit(1)
-	}
-	if !grid[startY][startX].Walkable {
-		fmt.Println("Početna pozicija nije prohodna.")
-		os.Exit(1)
-	}
-	if !grid[goalY][goalX].Walkable {
-		fmt.Println("Pozicija cilja nije prohodna.")
-		os.Exit(1)
-	}
-	grid[startY][startX].Walkable = false
-	return grid[startY][startX], grid[goalY][goalX]
-}
-
 func main() {
 	const width, height = 10, 10
 	var weightType, mapSelection, startX, startY, goalX, goalY, animSpeed, heur int
 	var grid [][]*Node
 	var obstacles []position
 	var start, goal *Node
+	var heuristicFunc HeuristicFunc
+	diagonals := false
 
 	// Odabir načina inicijalizacije
 	initMethod := chooseInitializationMethod()
@@ -180,6 +158,8 @@ func main() {
 		for _, obs := range obstacles {
 			grid[obs.Y][obs.X].Walkable = false
 		}
+		heuristicFunc, diagonals = selectHeuristicFromValue(heur)
+
 		// Označavanje početka i dodjela
 		grid[startY][startX].Walkable = false
 		start = grid[startY][startX]
@@ -194,7 +174,9 @@ func main() {
 		for _, obs := range obstacles {
 			grid[obs.Y][obs.X].Walkable = false
 		}
-		// Ručni unos početnih i završnih koordinata
+		heuristicFunc, diagonals = getSelectedHeuristic()
+
+		// IZMJENA - autor: Marin Rabađija
 		start = insertCoordinates(grid, height, width, 'A')
 		goal = insertCoordinates(grid, height, width, 'B')
 		// Ručni unos animacijske brzine
@@ -202,17 +184,8 @@ func main() {
 		// U ručnom načinu možemo kasnije ručno odabrati heurističku funkciju:
 		heur = 0
 	}
-	// Postavljanje animacijske brzine – sada samo koristimo vrijednost iz varijable animSpeed
-	animationSpeed := animSpeed
-	diagonals := false
 
 	// Odabir heuristike
 	// IZMJENA - autor: Marin Rabađija (dodan indikator za implementaciju dijagonala)
-	var heuristicFunc HeuristicFunc
-	if initMethod == "1" {
-		heuristicFunc, diagonals = selectHeuristicFromValue(heur)
-	} else {
-		heuristicFunc, diagonals = getSelectedHeuristic()
-	}
-	aStarSearch(grid, start, goal, animationSpeed, heuristicFunc, diagonals)
+	aStarSearch(grid, start, goal, animSpeed, heuristicFunc, diagonals)
 }
