@@ -148,6 +148,7 @@ func main() {
 	// Odabir načina inicijalizacije
 	initMethod := chooseInitializationMethod()
 
+	// IZMJENA - autor: Ante Ujčić
 	if initMethod == "1" {
 		// Default način: učitavanje svih podataka iz input.txt
 		weightType, mapSelection, startX, startY, goalX, goalY, animSpeed, heur = getInputFromFile()
@@ -181,8 +182,6 @@ func main() {
 		goal = insertCoordinates(grid, height, width, 'B')
 		// Ručni unos animacijske brzine
 		animSpeed = insertAnimationSpeed()
-		// U ručnom načinu možemo kasnije ručno odabrati heurističku funkciju:
-		heur = 0
 	}
 
 	// Odabir heuristike
